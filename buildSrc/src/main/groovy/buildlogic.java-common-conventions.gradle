@@ -23,6 +23,8 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'org.json:json:20240303'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

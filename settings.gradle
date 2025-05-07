@@ -12,3 +12,4 @@ plugins {
 
 rootProject.name = 'OOP Implementation and Design'
 include('app', 'list', 'utilities')
+

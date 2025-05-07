@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 public class Car extends Vehicle {
 
-    final static ArrayList<String> carTypes = new ArrayList<String>(Arrays.asList("Sedan", "SUV", "Hatchback", "Convertible"));
     private String carType;
     private int totalDoors;
     private double trunkVolume;
@@ -59,9 +58,5 @@ public class Car extends Vehicle {
 
     public boolean getHasSunroof() {
         return hasSunroof;
-    }
-
-    public ArrayList<String> getCarTypes() {
-        return carTypes;
     }
 }

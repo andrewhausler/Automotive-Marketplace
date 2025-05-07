@@ -3,8 +3,436 @@
  */
 package org.example.app;
 
-public class App {
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+import javafx.scene.paint.Color;
+import javafx.geometry.*;
+import javafx.scene.text.*;
+import java.util.regex.*;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import javafx.stage.WindowEvent;
+import java.io.IOException;
+import javafx.application.*;
+
+
+public class App extends Application {
+
+    private static DatabaseManagement database = new DatabaseManagement();
+
+    public static void applicationStartProcedure() {
+        Car car1 = new Car("Audi", "A4", "2021", "2.0L", "Quattro", "Sport", "Silver", "Brown", "S-Line", 5, false, true, true, "Sedan", 5, 368, false, true);
+        database.addVehicle(car1);
+    }
+
+    public static void createAlert(String response) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText("Error Occurred!");
+        alert.setContentText(response);
+        alert.showAndWait();
+    }
+    
+    public void start(Stage stage) {
+        StackPane root = new StackPane();
+
+        Label welcomeLabel = new Label("Welcome to Automotive Marketplace!");
+        welcomeLabel.setFont(Font.font("System", 30));
+        welcomeLabel.setTranslateY(-200);
+
+        Label loginLabel = new Label("Login");
+        loginLabel.setTranslateY(-150);
+        loginLabel.setFont(Font.font("System", 20));
+
+        Label username = new Label("Username:");
+        username.setTranslateX(-150);
+        username.setTranslateY(-100);
+
+        TextField usernameField = new TextField();
+        usernameField.setMaxWidth(Region.USE_PREF_SIZE);
+        usernameField.setPrefWidth(200);
+        usernameField.setTranslateY(-100);
+
+        Label password = new Label("Password:");
+        password.setTranslateX(-150);
+        password.setTranslateY(-70);
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setMaxWidth(Region.USE_PREF_SIZE);
+        passwordField.setPrefWidth(200);
+        passwordField.setTranslateY(-70);
+
+        Button submitForm = new Button("Submit");
+        submitForm.setTranslateY(-30);
+        submitForm.setOnAction(e -> {
+            ArrayList<Customer> allAccounts = database.getAccounts();
+            String usernameInput = usernameField.getText();
+            String passwordInput = passwordField.getText();
+            for(int i=0; i<allAccounts.size(); i++) {
+                if(allAccounts.get(i).getFirstName().equals(usernameInput)) {
+                    try {
+                        if(Customer.hashPassword(passwordInput, allAccounts.get(i).getPasswordSalt()).equals(allAccounts.get(i).getPasswordHash())) {
+                            mainPage(stage, allAccounts.get(i));
+                        }
+                        else {
+                            continue;
+                        }
+                    }
+                    catch (NoSuchAlgorithmException ex) {
+                        createAlert("No Such Algorithm Exception");
+                        usernameField.clear();
+                        passwordField.clear();
+                        break;
+                    }
+                    catch (InvalidKeySpecException ex) {
+                        createAlert("Invalid Key Spec Exception");
+                        usernameField.clear();
+                        passwordField.clear();
+                        break;
+                    }
+                }
+            }
+            createAlert("Invalid Credentials!");
+            usernameField.clear();
+            passwordField.clear();
+        });
+
+        Button dontHaveAccount = new Button("Don't have an account?");
+        dontHaveAccount.setTranslateY(10);
+        dontHaveAccount.setOnAction(e -> {
+            createAccountPage(stage);
+        });
+
+        Button continueAsGuest = new Button("Continue as guest?");
+        continueAsGuest.setTranslateY(40);
+        continueAsGuest.setOnAction(e -> {
+            mainPage(stage, new Customer());
+        });
+
+        root.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+        root.getChildren().addAll(welcomeLabel, loginLabel, username, usernameField, password, submitForm, passwordField, dontHaveAccount, continueAsGuest);
+        Scene scene = new Scene(root, 1000, 800);
+
+        stage.setTitle("Automotive Marketplace");
+        stage.setScene(scene);
+        stage.show();
+
+        stage.setOnCloseRequest((WindowEvent event) -> {
+            pushChangesToDatabase();
+            Platform.exit();
+        });
+    }
+
+    public void mainPage(Stage stage, Customer customer) {
+        Pane root = new Pane();
+        ArrayList<Vehicle> allVehicles = database.getVehicles();
+        VBox vehicleList = new VBox(10);
+
+        for(int i=0; i<database.getVehicles().size(); i++) {
+            VBox vehicle = new VBox(10);
+            vehicle.setStyle("-fx-border-color: white; -fx-padding: 10; -fx-background-color: gray");
+            vehicle.getChildren().addAll(
+                new Label("Make: " + allVehicles.get(i).getMake()),
+                new Label("Model: " + allVehicles.get(i).getModel()),
+                new Label("Year: " + allVehicles.get(i).getYear()),
+                new Label("Engine: " + allVehicles.get(i).getEngineType()),
+                new Label("Transmission: " + allVehicles.get(i).getTransmission()),
+                new Label("Body Style: " + allVehicles.get(i).getBodyStyle()),
+                new Label("Exterior Color: " + allVehicles.get(i).getExteriorColor()),
+                new Label("Interior Color: " + allVehicles.get(i).getInteriorColor()),
+                new Label("Trim Package: " + allVehicles.get(i).getTrimPackage()),
+                new Label("totalSeats: " + allVehicles.get(i).getTotalSeats()),
+                new Label("Bluetooth: " + allVehicles.get(i).getHasBluetooth()),
+                new Label("Heated Seats: " + allVehicles.get(i).getHasHeatedSeats()),
+                new Label("Remote Start: " + allVehicles.get(i).getHasRemoteStart())
+            );
+            if(allVehicles.get(i) instanceof Car) {
+                Car someCar = (Car) allVehicles.get(i);
+                vehicle.getChildren().addAll(
+                    new Label("Car Type: " + someCar.getCarType()),
+                    new Label("Total Doors: " + someCar.getTotalDoors()),
+                    new Label("Trunk Volume: " + someCar.getTrunkVolume()),
+                    new Label("Convertible: " + someCar.getIsConvertible()),
+                    new Label("Sunroof: " + someCar.getHasSunroof())
+                );
+            }
+            else {
+                Truck someTruck = (Truck) allVehicles.get(i);
+                vehicle.getChildren().addAll(
+                    new Label("Truck Type: " + someTruck.getTruckType()),
+                    new Label("Bed Length: " + someTruck.getBedLength()),
+                    new Label("Towing Capacity: " + someTruck.getTowingCapacity()),
+                    new Label("Total Axles: " + someTruck.getTotalAxles())
+                );
+            }
+
+            vehicleList.getChildren().add(vehicle);
+
+        }
+
+        ScrollPane scroll = new ScrollPane(vehicleList);
+        scroll.setFitToWidth(true);
+
+        root.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+        root.getChildren().addAll(scroll);
+        Scene scene = new Scene(root, 1000, 800);
+
+        stage.setTitle("Automotive Marketplace");
+        stage.setScene(scene);
+        stage.show();
+
+        stage.setOnCloseRequest((WindowEvent event) -> {
+            pushChangesToDatabase();
+            Platform.exit();
+        });
+    }
+
+    public void createAccountPage(Stage stage) {
+        StackPane root = new StackPane();
+
+        Label welcomeLabel = new Label("Welcome to Automotive Marketplace!");
+        welcomeLabel.setFont(Font.font("System", 30));
+        welcomeLabel.setTranslateY(-200);
+
+        Label createAccount = new Label("Create Account");
+        createAccount.setTranslateY(-150);
+        createAccount.setFont(Font.font("System", 20));
+
+        Label firstName = new Label("* First name:");
+        firstName.setTranslateY(-100);
+        firstName.setTranslateX(-150);
+        TextField firstNameField = new TextField();
+        firstNameField.setMaxWidth(Region.USE_PREF_SIZE);
+        firstNameField.setPrefWidth(200);
+        firstNameField.setTranslateY(-100);
+
+        Label lastName = new Label("* Last name:");
+        lastName.setTranslateX(-150);
+        lastName.setTranslateY(-70);
+        TextField lastNameField = new TextField();
+        lastNameField.setMaxWidth(Region.USE_PREF_SIZE);
+        lastNameField.setPrefWidth(200);
+        lastNameField.setTranslateY(-70);
+
+        Label phoneNumber = new Label("* Phone number:");
+        phoneNumber.setTranslateX(-160);
+        phoneNumber.setTranslateY(-40);
+        TextField phoneNumberField = new TextField();
+        phoneNumberField.setMaxWidth(Region.USE_PREF_SIZE);
+        phoneNumberField.setPrefWidth(200);
+        phoneNumberField.setTranslateY(-40);
+
+        Label email = new Label("* Email:");
+        email.setTranslateX(-150);
+        email.setTranslateY(-10);
+        TextField emailField = new TextField();
+        emailField.setMaxWidth(Region.USE_PREF_SIZE);
+        emailField.setPrefWidth(200);
+        emailField.setTranslateY(-10);
+
+        Label password = new Label("* Password:");
+        password.setTranslateX(-160);
+        password.setTranslateY(20);
+        TextField passwordField = new TextField();
+        passwordField.setMaxWidth(Region.USE_PREF_SIZE);
+        passwordField.setPrefWidth(200);
+        passwordField.setTranslateY(20); 
+
+        Label verifyPassword = new Label("* Verify Password:");
+        verifyPassword.setTranslateX(-170);
+        verifyPassword.setTranslateY(50);
+        TextField verifyPasswordField = new TextField();
+        verifyPasswordField.setMaxWidth(Region.USE_PREF_SIZE);
+        verifyPasswordField.setPrefWidth(200);
+        verifyPasswordField.setTranslateY(50);
+
+        Label age = new Label("Age:");
+        age.setTranslateX(-140);
+        age.setTranslateY(80);
+        TextField ageField = new TextField();
+        ageField.setMaxWidth(Region.USE_PREF_SIZE);
+        ageField.setPrefWidth(200);
+        ageField.setTranslateY(80);
+
+        Label dateOfBirth = new Label("Date of birth:");
+        dateOfBirth.setTranslateX(-170);
+        dateOfBirth.setTranslateY(110);
+        TextField dateOfBirthField = new TextField();
+        dateOfBirthField.setMaxWidth(Region.USE_PREF_SIZE);
+        dateOfBirthField.setPrefWidth(200);
+        dateOfBirthField.setTranslateY(110);
+
+        Label insuranceProvider = new Label("Insurance provider:");
+        insuranceProvider.setTranslateX(-170);
+        insuranceProvider.setTranslateY(140);
+        TextField insuranceProviderField = new TextField();
+        insuranceProviderField.setMaxWidth(Region.USE_PREF_SIZE);
+        insuranceProviderField.setPrefWidth(200);
+        insuranceProviderField.setTranslateY(140);
+
+        Label driverLicenseForm = new Label("Driver License");
+        driverLicenseForm.setTranslateY(190);
+        driverLicenseForm.setFont(Font.font("System", 20));
+
+        Label idNumber = new Label("ID number:");
+        idNumber.setTranslateY(240);
+        idNumber.setTranslateX(-160);
+        TextField idNumberField = new TextField();
+        idNumberField.setMaxWidth(Region.USE_PREF_SIZE);
+        idNumberField.setPrefWidth(200);
+        idNumberField.setTranslateY(240);
+
+        Label dateCreated = new Label("Date created:");
+        dateCreated.setTranslateY(270);
+        dateCreated.setTranslateX(-160);
+        TextField dateCreatedField = new TextField();
+        dateCreatedField.setMaxWidth(Region.USE_PREF_SIZE);
+        dateCreatedField.setPrefWidth(200);
+        dateCreatedField.setTranslateY(270);
+
+        Label expirationDate = new Label("Expiration date:");
+        expirationDate.setTranslateY(300);
+        expirationDate.setTranslateX(-160);
+        TextField expirationDateField = new TextField();
+        expirationDateField.setMaxWidth(Region.USE_PREF_SIZE);
+        expirationDateField.setPrefWidth(200);
+        expirationDateField.setTranslateY(300);
+
+        Label state = new Label("State:");
+        state.setTranslateY(330);
+        state.setTranslateX(-150);
+        TextField stateField = new TextField();
+        stateField.setMaxWidth(Region.USE_PREF_SIZE);
+        stateField.setPrefWidth(200);
+        stateField.setTranslateY(330);
+
+        Button submitForm = new Button("Submit");
+        submitForm.setTranslateY(350);
+        submitForm.setOnAction(e -> {
+            if(!firstNameField.getText().equals("") && !lastNameField.getText().equals("") && checkPhoneNumber(phoneNumberField.getText()) && checkEmail(emailField.getText()) && comparePasswords(passwordField.getText(), verifyPasswordField.getText())) {
+                try {
+                    Customer newCustomer = new Customer(firstNameField.getText(), lastNameField.getText(), phoneNumberField.getText(), emailField.getText(), passwordField.getText());
+                    database.getAccounts().add(newCustomer);
+                    mainPage(stage, newCustomer);
+                }
+                catch (NoSuchAlgorithmException ex) {
+                    createAlert("No Such Algorithm Exception");
+                    createAccountPage(stage);
+                }
+                catch (InvalidKeySpecException ex) {
+                    createAlert("Invalid Key Spec Exception");
+                    createAccountPage(stage);
+                }
+            }
+            else {
+                createAlert("The Form Was Not Filled Out Correctly!");
+            }
+        });
+
+        Button backButton = new Button("<- Back");
+        backButton.setTranslateY(370);
+        backButton.setTranslateX(-450);
+        backButton.setOnAction(e -> {
+            start(stage);
+        });
+
+        root.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
+        root.getChildren().addAll(welcomeLabel, createAccount, firstName, firstNameField, lastName, lastNameField, phoneNumber, phoneNumberField, email, emailField, password, passwordField, verifyPassword, verifyPasswordField, age, ageField, dateOfBirth, dateOfBirthField, insuranceProvider, insuranceProviderField, driverLicenseForm, idNumber, idNumberField, dateCreated, dateCreatedField, expirationDate, expirationDateField, state, stateField, submitForm, backButton);
+        Scene scene = new Scene(root, 1000, 800);
+
+        stage.setTitle("Automotive Marketplace");
+        stage.setScene(scene);
+        stage.show();
+
+        stage.setOnCloseRequest((WindowEvent event) -> {
+            pushChangesToDatabase();
+            Platform.exit();
+        });
+    }
+
+    public static boolean checkDateFields(String input) {
+        try {
+            int day = Integer.parseInt(input.substring(3, 5));
+            int month = Integer.parseInt(input.substring(0, 2));
+            int year = Integer.parseInt(input.substring(6, 10));
+            if(input.substring(2, 3).equals("/") && input.substring(5, 6).equals("/") && input.length() == 10) {
+                if((day > 0 && day <= 31) && (month > 0 && month <= 12) && (year >= 2010)) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+        catch (IndexOutOfBoundsException ex) {
+            return false;
+        }
+        catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public static boolean checkForInteger(String input) {
+        try {
+            int value = Integer.parseInt(input);
+            return true;
+        }
+        catch(NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public static boolean checkEmail(String input) {
+        if(!input.equals("")) {
+            String regex = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+            Pattern pattern = Pattern.compile(regex);
+            Matcher matcher = pattern.matcher(input);
+            return matcher.matches();
+        }
+        return false;
+    }
+
+    public static boolean checkPhoneNumber(String input) {
+        try {
+            int beginning = Integer.parseInt(input.substring(0, 3));
+            int middle = Integer.parseInt(input.substring(4, 7));
+            int end = Integer.parseInt(input.substring(8, 11));
+            if(input.length() == 12) {
+                return true;
+            }
+            return false;
+        }
+        catch (IndexOutOfBoundsException ex) {
+            return false;
+        }
+        catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public static boolean comparePasswords(String password, String verifyPassword) {
+        if(password.equals(verifyPassword) && password.length() >= 8) {
+            return true;
+        }
+        return false;
+    }
+
+    public void pushChangesToDatabase() {
+        try {
+            database.pushAccounts();
+            database.pushVehicles();
+        }
+        catch(IOException ex) {
+            createAlert("File Transfer Failed!");
+            ex.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
-        System.out.println("Main File");
+        applicationStartProcedure();
+        launch(args);
     }
 }

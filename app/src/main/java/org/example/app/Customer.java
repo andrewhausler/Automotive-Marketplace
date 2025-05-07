@@ -16,7 +16,7 @@ public class Customer {
     private String phoneNumber;
     private String email;
     private String passwordHash;
-    private ArrayList<Vehicle> purchaseHistory;
+    private String passwordSalt;
 
     // Only Required For Purchasing A Vehicle
     private int age;
@@ -30,29 +30,42 @@ public class Customer {
         phoneNumber = "";
         email = "";
         passwordHash = "";
-        purchaseHistory = new ArrayList<Vehicle>();
+        passwordSalt = "";
         age = 0;
         dateOfBirth = "";
         insuranceProvider = "";
         driverLicense = new DriverLicense();
     }
 
-    public Customer(String firstName, String lastName, String phoneNumber, String email, String passwordHash, ArrayList<Vehicle> purchaseHistory) {
+    public Customer(String firstName, String lastName, String phoneNumber, String email, String passwordHash) throws NoSuchAlgorithmException, InvalidKeySpecException {
         this.firstName = firstName;
         this.lastName = lastName;
         this.phoneNumber = phoneNumber;
         this.email = email;
-        this.passwordHash = passwordHash;
-        this.purchaseHistory = purchaseHistory;
+        this.passwordSalt = generateSalt();
+        this.passwordHash = hashPassword(passwordHash, passwordSalt);
     }
 
-    public Customer(String firstName, String lastName, String phoneNumber, String email, String passwordHash, ArrayList<Vehicle> purchaseHistory, int age, String dateOfBirth, String insuranceProvider, DriverLicense driverLicense) {
+    public Customer(String firstName, String lastName, String phoneNumber, String email, String passwordHash, int age, String dateOfBirth, String insuranceProvider, DriverLicense driverLicense) throws NoSuchAlgorithmException, InvalidKeySpecException {
         this.firstName = firstName;
         this.lastName = lastName;
         this.phoneNumber = phoneNumber;
         this.email = email;
+        this.passwordSalt = generateSalt();
+        this.passwordHash = hashPassword(passwordHash, passwordSalt);
+        this.age = age;
+        this.dateOfBirth = dateOfBirth;
+        this.insuranceProvider = insuranceProvider;
+        this.driverLicense = driverLicense;
+    }
+
+    public Customer(String firstName, String lastName, String phoneNumber, String email, String passwordHash, String passwordSalt, int age, String dateOfBirth, String insuranceProvider, DriverLicense driverLicense) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.passwordSalt = passwordSalt;
         this.passwordHash = passwordHash;
-        this.purchaseHistory = purchaseHistory;
         this.age = age;
         this.dateOfBirth = dateOfBirth;
         this.insuranceProvider = insuranceProvider;
@@ -96,6 +109,14 @@ public class Customer {
         this.passwordHash = hashPassword(password, randomSalt);
     }
 
+    public String getPasswordSalt() {
+        return passwordSalt;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     public static String generateSalt() {
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
@@ -103,11 +124,39 @@ public class Customer {
     }
 
     public static String hashPassword(String password, String encodedSalt) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        byte[] salt = Base64.getDecoder().decode(encodedSalt);
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-        byte[] hash = factory.generateSecret(spec).getEncoded();
+            byte[] salt = Base64.getDecoder().decode(encodedSalt);
+            PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            byte[] hash = factory.generateSecret(spec).getEncoded();
 
-        return Base64.getEncoder().encodeToString(hash);
+            return Base64.getEncoder().encodeToString(hash);  
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setDateOfBirth(String dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setInsuranceProvider(String insuranceProvider) {
+        this.insuranceProvider = insuranceProvider;
+    }
+
+    public String getInsuranceProvider() {
+        return insuranceProvider;
+    }
+
+    public DriverLicense getDriversLicense() {
+        return driverLicense;
     }
 }
